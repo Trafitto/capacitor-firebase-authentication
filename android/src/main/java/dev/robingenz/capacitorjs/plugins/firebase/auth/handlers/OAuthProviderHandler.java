@@ -41,7 +41,9 @@ public class OAuthProviderHandler {
             .addOnSuccessListener(
                 authResult -> {
                     AuthCredential credential = authResult.getCredential();
-                    pluginImplementation.handleSuccessfulSignIn(call, credential, null);
+                    // Todo: Change the implementation - Try to fix Microsoft login
+                    //pluginImplementation.handleSuccessfulSignIn(call, credential, null);
+                    pluginImplementation.handleSuccessfulMicrosoftSignIn(call, credential, null);
                 }
             )
             .addOnFailureListener(exception -> pluginImplementation.handleFailedSignIn(call, null, exception));

@@ -244,6 +244,47 @@ public class FirebaseAuthentication {
             );
     }
 
+    public void handleSuccessfulMicrosoftSignIn(final PluginCall call, AuthCredential credential, String idToken) {
+        boolean skipNativeAuth = this.config.getSkipNativeAuth();
+        if (skipNativeAuth) {
+            Log.d(FirebaseAuthenticationPlugin.TAG, "CALL: "+ call.toString());
+            Log.d(FirebaseAuthenticationPlugin.TAG, "AUTH CREDENTIAL "+ credential.toString());
+
+            JSObject signInResult = FirebaseAuthenticationHelper.createSignInResult(null, credential, idToken);
+            call.resolve(signInResult);
+            return;
+        }
+        firebaseAuthInstance
+                .signInWithCredential(credential)
+                .addOnCompleteListener(
+                        plugin.getActivity(),
+                        new OnCompleteListener<AuthResult>() {
+                            @Override
+                            public void onComplete(@NonNull Task<AuthResult> task) {
+                                if (task.isSuccessful()) {
+                                    Log.d(FirebaseAuthenticationPlugin.TAG, "signInWithCredential succeeded.");
+                                    FirebaseUser user = getCurrentUser();
+                                    JSObject signInResult = FirebaseAuthenticationHelper.createSignInResult(user, credential, idToken);
+                                    call.resolve(signInResult);
+                                } else {
+                                    Log.e(FirebaseAuthenticationPlugin.TAG, "signInWithCredential failed.", task.getException());
+                                    call.reject(ERROR_SIGN_IN_FAILED);
+                                }
+                            }
+                        }
+                )
+                .addOnFailureListener(
+                        plugin.getActivity(),
+                        new OnFailureListener() {
+                            @Override
+                            public void onFailure(@NonNull Exception exception) {
+                                Log.e(FirebaseAuthenticationPlugin.TAG, "signInWithCredential failed.", exception);
+                                call.reject(ERROR_SIGN_IN_FAILED);
+                            }
+                        }
+                );
+    }
+
     public void handleFailedSignIn(PluginCall call, String message, Exception exception) {
         if (message == null && exception != null) {
             message = exception.getLocalizedMessage();
